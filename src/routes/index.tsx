@@ -1,12 +1,26 @@
-import { component$, useSignal } from "@builder.io/qwik";
-import type { DocumentHead } from "@builder.io/qwik-city";
-import { QwikUiModal } from "~/components/@qwik-ui-modal";
+import {
+    component$,
+    JSXOutput,
+    QRL,
+    Signal,
+    Slot,
+    useSignal,
+} from "@builder.io/qwik";
+import { Modal } from "@qwik-ui/headless";
+
+/**
+ * Example:
+ * - Modal works as intended when not conditionally rendered.
+ * - Modal does not work when conditionally rendered.
+ *
+ * - Minimal version of our component included below for reference.
+ */
 
 export default component$(() => {
     const notConditionallyRenderedIsOpenSignal = useSignal(false);
     const conditionallyRenderedIsOpenSignal = useSignal(false);
     return (
-        <main>
+        <>
             {/* Not Conditionally Rendered: */}
 
             <button
@@ -52,16 +66,50 @@ export default component$(() => {
                     ))}
                 </QwikUiModal>
             )}
-        </main>
+        </>
     );
 });
 
-export const head: DocumentHead = {
-    title: "Welcome to Qwik",
-    meta: [
-        {
-            name: "description",
-            content: "Qwik site description",
-        },
-    ],
-};
+const QwikUiModal = component$(
+    (props: {
+        title: string | JSXOutput;
+        isOpenSignal: Signal<boolean>;
+        description?: string | JSXOutput;
+        onClickClose$?: QRL<() => void>;
+        onClickOutside$?: QRL<() => void>;
+        closeOnBackdropClick?: boolean;
+    }) => {
+        return (
+            <Modal.Root
+                bind:show={props.isOpenSignal}
+                closeOnBackdropClick={props.closeOnBackdropClick}
+            >
+                <Modal.Panel>
+                    <header>
+                        <div>
+                            <Modal.Title>{props.title}</Modal.Title>
+                            <button
+                                class="unstyled"
+                                autoFocus={false}
+                                onClick$={() => {
+                                    props.onClickClose$?.();
+                                    props.isOpenSignal.value = false;
+                                }}
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        {props.description && (
+                            <Modal.Description>
+                                {props.description}
+                            </Modal.Description>
+                        )}
+                    </header>
+                    <section>
+                        <Slot />
+                    </section>
+                </Modal.Panel>
+            </Modal.Root>
+        );
+    },
+);
